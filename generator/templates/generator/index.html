@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Brief Generator | Collabstr</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 32px;
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        .result h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .brief-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            color: #555;
+        }
+
+        .angles-section,
+        .criteria-section {
+            margin-bottom: 24px;
+        }
+
+        .angles-section h3,
+        .criteria-section h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .angle-item {
+            margin-bottom: 12px;
+            padding-left: 24px;
+            position: relative;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .angle-item::before {
+            content: counter(angle-counter);
+            counter-increment: angle-counter;
+            position: absolute;
+            left: 0;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .angles-list {
+            counter-reset: angle-counter;
+        }
+
+        .criteria-item {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .criteria-item::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .telemetry {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .telemetry-item {
+            margin-bottom: 4px;
+        }
+
+        .error {
+            display: none;
+            padding: 16px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            color: #c33;
+            margin-top: 16px;
+        }
+
+        .error.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Brief Generator</h1>
+            <p>Create campaign briefs tailored to your brand and goals</p>
+        </div>
+        
+        <div class="content">
+            <form id="briefForm">
+                <div class="form-group">
+                    <label for="brandName">Brand Name</label>
+                    <input type="text" id="brandName" name="brandName" required placeholder="Enter your brand name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="platform">Target Platform</label>
+                    <select id="platform" name="platform" required>
+                        <option value="">Select a platform</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="UGC">UGC</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="goal">Goal</label>
+                    <select id="goal" name="goal" required>
+                        <option value="">Select a goal</option>
+                        <option value="Awareness">Awareness</option>
+                        <option value="Conversions">Conversions</option>
+                        <option value="Content Assets">Content Assets</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tone">Tone</label>
+                    <select id="tone" name="tone" required>
+                        <option value="">Select a tone</option>
+                        <option value="Professional">Professional</option>
+                        <option value="Friendly">Friendly</option>
+                        <option value="Playful">Playful</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">Generate Brief</button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Generating your campaign brief...</p>
+            </div>
+            
+            <div class="error" id="error"></div>
+            
+            <div class="result" id="result">
+                <h2>Campaign Brief</h2>
+                <div class="brief-text" id="briefText"></div>
+                
+                <div class="angles-section">
+                    <h3>Content Angles</h3>
+                    <div class="angles-list" id="anglesList"></div>
+                </div>
+                
+                <div class="criteria-section">
+                    <h3>Creator Selection Criteria</h3>
+                    <div id="criteriaList"></div>
+                </div>
+                
+                <div class="telemetry" id="telemetry"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#briefForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Hide previous results and errors
+                $('#result').removeClass('active');
+                $('#error').removeClass('active').text('');
+                
+                // Show loading, disable button
+                $('#loading').addClass('active');
+                $('#submitBtn').prop('disabled', true);
+                
+                // Get form data
+                const formData = {
+                    brand_name: $('#brandName').val().trim(),
+                    platform: $('#platform').val(),
+                    goal: $('#goal').val(),
+                    tone: $('#tone').val()
+                };
+                
+                // Send AJAX request
+                $.ajax({
+                    url: '/api/generate-brief/',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        // Hide loading
+                        $('#loading').removeClass('active');
+                        $('#submitBtn').prop('disabled', false);
+                        
+                        // Display results
+                        $('#briefText').text(response.brief);
+                        
+                        // Display angles
+                        const anglesHtml = response.angles.map(angle => 
+                            `<div class="angle-item">${angle}</div>`
+                        ).join('');
+                        $('#anglesList').html(anglesHtml);
+                        
+                        // Display criteria
+                        const criteriaHtml = response.criteria.map(criterion => 
+                            `<div class="criteria-item">${criterion}</div>`
+                        ).join('');
+                        $('#criteriaList').html(criteriaHtml);
+                        
+                        // Display telemetry
+                        const tel = response.telemetry;
+                        const telHtml = `
+                            <div class="telemetry-item"><strong>Latency:</strong> ${tel.latency_ms}ms</div>
+                            <div class="telemetry-item"><strong>Tokens:</strong> ${tel.tokens_total} (prompt: ${tel.tokens_prompt}, completion: ${tel.tokens_completion})</div>
+                            <div class="telemetry-item"><strong>Estimated Cost:</strong> $${tel.estimated_cost_usd}</div>
+                        `;
+                        $('#telemetry').html(telHtml);
+                        
+                        // Show result
+                        $('#result').addClass('active');
+                        
+                        // Scroll to result
+                        $('html, body').animate({
+                            scrollTop: $('#result').offset().top - 20
+                        }, 500);
+                    },
+                    error: function(xhr) {
+                        // Hide loading
+                        $('#loading').removeClass('active');
+                        $('#submitBtn').prop('disabled', false);
+                        
+                        // Show error
+                        let errorMsg = 'An error occurred. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        } else if (xhr.status === 429) {
+                            errorMsg = 'Rate limit exceeded. Please wait a moment and try again.';
+                        } else if (xhr.status === 0) {
+                            errorMsg = 'Network error. Please check your connection.';
+                        }
+                        
+                        $('#error').text(errorMsg).addClass('active');
+                        
+                        // Scroll to error
+                        $('html, body').animate({
+                            scrollTop: $('#error').offset().top - 20
+                        }, 500);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
